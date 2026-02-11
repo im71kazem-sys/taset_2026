@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>قاعدة بيانات الكتب التدريبية - MARC21 - إعداد عماد كاظم السعدي</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Tahoma", "Arial", sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+    min-height: 100vh;
+  }
+  .header {
+    text-align: center;
+    background: linear-gradient(90deg, #1e3c72, #2a5298);
+    color: white;
+    padding: 25px;
+    border-radius: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+  .header h1 { font-size: 28px; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+  .header p { font-size: 16px; opacity: 0.9; }
+  .footer {
+    text-align: center;
+    margin-top: 40px;
+    padding: 20px;
+    background: #2c3e50;
+    color: white;
+    border-radius: 15px;
+    font-weight: bold;
+  }
+  #search-container {
+    text-align: center;
+    margin-bottom: 30px;
+    background: rgba(255,255,255,0.1);
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  }
+  .search-form {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+  #search {
+    width: 400px;
+    padding: 15px 20px;
+    font-size: 16px;
+    border: 3px solid #fff;
+    border-radius: 30px;
+    outline: none;
+    background: rgba(255,255,255,0.95);
+    transition: all 0.3s ease;
+    flex: 1;
+    max-width: 500px;
+  }
+  #search:focus {
+    border-color: #f1c40f;
+    box-shadow: 0 0 20px rgba(241, 196, 15, 0.4);
+    transform: scale(1.02);
+  }
+  #search-btn {
+    padding: 15px 30px;
+    background: linear-gradient(45deg, #27ae60, #2ecc71);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+    white-space: nowrap;
+  }
+  #search-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(39, 174, 96, 0.5);
+  }
+  #clear {
+    padding: 15px 25px;
+    background: linear-gradient(45deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+  }
+  #clear:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(231, 76, 60, 0.5);
+  }
+  .results-info {
+    text-align: center;
+    margin: 20px 0;
+    font-size: 18px;
+    color: white;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    background: rgba(0,0,0,0.3);
+    padding: 15px;
+    border-radius: 15px;
+  }
+  .cards-grid {
+    display: grid;
+    gap: 25px;
+    max-width: 1200px;
+    margin: 0 auto;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  }
+  .card {
+    background: rgba(255,255,255,0.95);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    transition: all 0.4s ease;
+    border-top: 5px solid #3498db;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: 'MARC21 Record';
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: #3498db;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+  }
+  .card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+  }
+  .marc-field {
+    margin: 20px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    border-left: 5px solid #27ae60;
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    min-height: 60px;
+  }
+  .marc-label {
+    position: static;
+    background: linear-gradient(45deg, #27ae60, #2ecc71);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 25px;
+    font-size: 13px;
+    font-weight: bold;
+    box-shadow: 0 3px 12px rgba(39, 174, 96, 0.4);
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+  .marc-content {
+    padding: 0;
+    font-size: 16px;
+    line-height: 1.7;
+    color: #2c3e50;
+    flex: 1;
+    margin-top: 2px;
+  }
+  .no-results {
+    text-align: center;
+    color: white;
+    font-size: 24px;
+    margin: 60px 0;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    grid-column: 1 / -1;
+  }
+  @media (max-width: 768px) {
+    .search-form { flex-direction: column; gap: 15px; }
+    #search { width: 100%; max-width: 100%; }
+    #search-btn, #clear { width: 100%; max-width: 350px; }
+    .cards-grid { grid-template-columns: 1fr; padding: 0 10px; }
+    .card { padding: 25px 20px; }
+    .marc-field { flex-direction: column; gap: 15px; text-align: right; }
+    .marc-label { align-self: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📚 قاعدة بيانات الكتب التدريبية MARC21</h1>
+  <p>نظام تدريبي شامل لتصنيف الكتب العربية التراثية - البحث المتقدم في جميع الحقول</p>
+</div>
+
+<div id="search-container">
+  <form class="search-form" id="searchForm">
+    <input type="search" id="search" placeholder="🔍 ابحث في جميع حقول MARC (العنوان، المؤلف، التصنيف، السبب، الموضوع)...">
+    <button type="submit" id="search-btn">🔎 بحث</button>
+    <button type="button" id="clear">🗑️ مسح</button>
+  </form>
+</div>
+
+<div id="results-info" class="results-info" style="display: none;">
+  عرض <span id="count">70</span> سجل MARC21
+</div>
+
+<div class="cards-grid" id="cards"></div>
+
+<div class="footer">
+  👨‍💼 إعداد: عماد كاظم السعدي | 📅 2026 | 🔖 متوافق مع MARC21 & RDA & Dewey Decimal
+</div>
+
+<script>
+const books = [
+  {title:"المنقذ من الضلال", author:"أبو حامد الغزالي", dewey:"240.1", reason:"يندرج تحت الإلهيات والتوحيد في قسم أصول الدين الإسلامي.", topic:"سيرة فكرية ونقد المذاهب"},
+  {title:"صحيح البخاري", author:"محمد بن إسماعيل البخاري", dewey:"234", reason:"مخصص لكتب الصحاح الستة في قسم الحديث.", topic:"أحاديث نبوية صحيحة"},
+  {title:"المعجم الوسيط", author:"أكاديمية اللغة العربية", dewey:"413", reason:"قواعد اللغة العربية في قسم اللغة.", topic:"تعريفات المفردات العربية"},
+  {title:"معجم اللغة العربية المعاصرة", author:"أحمد مختار عمر", dewey:"412", reason:"المعاجم العربية في علم الاشتقاق.", topic:"مفردات حديثة وأدبية"},
+  {title:"ديوان المتنبي", author:"أبو الطيب المتنبي", dewey:"811", reason:"الشعر العربي في قسم الأدب.", topic:"قصائد مديح وهجاء"},
+  {title:"تاريخ الطبري", author:"محمد بن جرير الطبري", dewey:"956", reason:"تاريخ العرب والإسلام.", topic:"تاريخ من الخليقة إلى العصر العباسي"},
+  {title:"صحيح مسلم", author:"مسلم بن الحجاج", dewey:"235", reason:"كتب الصحاح الستة في الحديث.", topic:"أحاديث صحيحة مرتبة"},
+  {title:"الموطأ", author:"مالك بن أنس", dewey:"235", reason:"مسانيد الأئمة الأربعة.", topic:"حديث وفقه مدني"},
+  {title:"لسان العرب", author:"ابن منظور", dewey:"412", reason:"المعاجم العربية الكبرى.", topic:"اشتقاقات لغوية شاملة"},
+  {title:"الكامل في التاريخ", author:"ابن الأثير", dewey:"956", reason:"تاريخ العرب والإسلام.", topic:"أحداث تاريخية مفصلة"},
+  {title:"إحياء علوم الدين", author:"أبو حامد الغزالي", dewey:"248", reason:"الفرق والمذاهب الكلامية.", topic:"أخلاق وتصوف"},
+  {title:"المقامات", author:"بديع الزمان الهمذاني", dewey:"818", reason:"النثر العربي.", topic:"مقامات ساخرة"},
+  {title:"الأم", author:"الإمام الشافعي", dewey:"251", reason:"أصول الفقه الإسلامي.", topic:"فقه شافعي"},
+  {title:"العقد الفريد", author:"ابن عبد ربه", dewey:"817", reason:"مجموعات أدبية متفرقة.", topic:"أدب ونوادر"},
+  {title:"السيرة النبوية", author:"ابن هشام", dewey:"239", reason:"السيرة النبوية في الحديث.", topic:"سيرة الرسول"},
+  {title:"الكامل في اللغة والأدب", author:"ابن سيده", dewey:"414", reason:"علم البلاغة.", topic:"بلاغة ولغة"},
+  {title:"سنن أبي داود", author:"أبو داود", dewey:"235", reason:"الصحاح الستة.", topic:"أحاديث فقهية"},
+  {title:"المفصل في التجويد", author:"سيبويه", dewey:"413", reason:"قواعد اللغة.", topic:"نحو عربي"},
+  {title:"ديوان المعري", author:"أبو العلاء المعري", dewey:"811", reason:"الشعر العربي.", topic:"فلسفة ولاهوت"},
+  {title:"البداية والنهاية", author:"ابن كثير", dewey:"956", reason:"تاريخ الإسلام.", topic:"تاريخ شامل"},
+  {title:"جامع البيان", author:"الطبري", dewey:"227", reason:"تفسير القرآن.", topic:"تفسير قرآني"},
+  {title:"الرسائل", author:"ابن سينا", dewey:"189.1", reason:"فلسفة إسلامية.", topic:"فلسفة وطب"},
+  {title:"سنن الترمذي", author:"الترمذي", dewey:"235", reason:"الصحاح الستة.", topic:"أحاديث ودرجة"},
+  {title:"كتاب الطبقات", author:"ابن سعد", dewey:"920", reason:"تراجم وطبقات.", topic:"سير الصحابة"},
+  {title:"المستصفى", author:"الغزالي", dewey:"251", reason:"أصول الفقه.", topic:"أصول أصولية"},
+  {title:"الحيوان", author:"الجاحظ", dewey:"813", reason:"القصص العربية.", topic:"أدب علمي"},
+  {title:"سنن النسائي", author:"النسائي", dewey:"235", reason:"الصحاح الستة.", topic:"أحاديث فقه"},
+  {title:"الجواهر", author:"الجاحظ", dewey:"814", reason:"الخطابة العربية.", topic:"نقد أدبي"},
+  {title:"مسند أحمد", author:"أحمد بن حنبل", dewey:"237", reason:"مسانيد الأئمة.", topic:"أحاديث مسندة"},
+  {title:"الأمالي", author:"أبو علي القالي", dewey:"817", reason:"مجموعات أدبية.", topic:"أدب وشعر"},
+  {title:"الفرج بعد الشدة", author:"أبو الفرج الأصفهاني", dewey:"818", reason:"النثر العربي.", topic:"قصص تاريخية"},
+  {title:"تفسير الجلالين", author:"الجلالين", dewey:"227", reason:"تفسير القرآن.", topic:"تفسير مختصر"},
+  {title:"ديوان أبي نواس", author:"أبو نواس", dewey:"811", reason:"شعر عربي.", topic:"غزل وخمريات"},
+  {title:"المدخل", author:"ابن الحاجب", dewey:"413", reason:"قواعد نحو.", topic:"نحو عربي"},
+  {title:"العبرات", author:"ابن أبي الدم", dewey:"956", reason:"تاريخ عربي.", topic:"تاريخ مصر"},
+  {title:"الصحاح", author:"الجوهري", dewey:"412", reason:"معاجم.", topic:"مفردات أساسية"},
+  {title:"المفاتيح", author:"السيوطي", dewey:"225", reason:"فقه قرآن.", topic:"فقه قرآني"},
+  {title:"ديوان جرير", author:"جرير", dewey:"811", reason:"شعر.", topic:"هجاء ومدح"},
+  {title:"فتح الباري", author:"ابن حجر", dewey:"234.1", reason:"شرح صحيح البخاري.", topic:"شرح حديث"},
+  {title:"الإفادات والإنشادات", author:"الشريف الرضي", dewey:"817", reason:"مجموعات أدبية.", topic:"خطب وشعر"},
+  {title:"القرآن الكريم", author:"وحي إلهي", dewey:"220", reason:"المصاحف.", topic:"كلام الله"},
+  {title:"كتاب الله", author:"الزمخشري", dewey:"226", reason:"تفسير.", topic:"تفسير بلاغي"},
+  {title:"النوادر", author:"أبو حيان التوحيدي", dewey:"816", reason:"نوادر وفكاهات.", topic:"أدب طريف"},
+  {title:"المغني", author:"ابن قدامة", dewey:"252", reason:"المعاملات الفقهية.", topic:"فقه حنبلي"},
+  {title:"الشعر والشعراء", author:"ابن قتيبة", dewey:"811", reason:"شعر عربي.", topic:"نقد شعري"},
+  {title:"الإماء الشواعر", author:"أبو فراس الحمداني", dewey:"811", reason:"شعر.", topic:"شعر جارية"},
+  {title:"السلطان الحائر", author:"توفيق الحكيم", dewey:"812", reason:"مسرحية عربية.", topic:"مسرح تاريخي"},
+  {title:"الصاحبي في فقه اللغة", author:"الثعالبي", dewey:"412", reason:"معاجم.", topic:"فقه لغة"},
+  {title:"الفضيلة", author:"مصطفى لطفي المنفلوطي", dewey:"813", reason:"قصص عربية.", topic:"ترجمات أخلاقية"},
+  {title:"الطرثوث في فوائد البرغوث", author:"السيوطي", dewey:"632.7", reason:"يقع في قسم الحشرات الضارة والآفات الزراعية، رغم التلميح الأدبي الطريف.", topic:"فوائد البرغوث في الطب والحياة اليومية"},
+  {title:"بلوغ المآرب في أخبار العقارب", author:"السيوطي", dewey:"595.4", reason:"تصنيف عقربيات وعنكبوتيات في علم الحيوان، بعيد عن التلميح التاريخي.", topic:"أخبار وخصائص العقارب علمياً"},
+  {title:"طرح العمامة في التفرقة بين المقامة والقمامة", author:"السيوطي", dewey:"892.71", reason:"أدب عربي نثري (مقامات)، لا علاقة له بالنظافة رغم التلميح.", topic:"تمييز أساليب المقامات الأدبية"},
+  {title:"الأرج في الفرج", author:"السيوطي", dewey:"616.6", reason:"أمراض الجهاز التناسلي في الطب، خلاف التلميح الشعري.", topic:"علاج مشكلات الخصوبة والتناسل"},
+  {title:"الوديك في فضل الديك", author:"السيوطي", dewey:"636.5", reason:"طيور الدواجن في الزراعة، غير أدبي كما يوحي العنوان.", topic:"فوائد الديك في الزراعة والطب"},
+  {title:"جر الذيل في علم الخيل", author:"السيوطي", dewey:"636.1", reason:"خيول وثروة حيوانية، بعيد عن الهجاء.", topic:"خصائص الخيول وعلم تربيتها"},
+  {title:"إخبار الطلاب في أخبار الكلاب", author:"السيوطي", dewey:"636.7", reason:"كلاب وثروة حيوانية، لا علاقة بطلاب العلم.", topic:"أنواع الكلاب وفوائدها"},
+  {title:"رسالة إبليس إلى إخوانه المناحيس", author:"ابن كرام الجثمي", dewey:"238.7", reason:"فرق إسلامية ومذاهب، رغم التلميح الشيطاني.", topic:"نقد الفرق المناحيس الإسلامية"},
+  {title:"القول التام في آداب دخول الحمام", author:"أحمد الأفقسي", dewey:"297.57", reason:"آداب الاستطابة في الفقه الإسلامي.", topic:"أحكام وآداب الحمام الشرعية"},
+  {title:"رفع اللثام عن أحكام الحمام", author:"ابن طولون الصالحي", dewey:"297.57", reason:"فقه الطهارة، غير طبي كما يبدو.", topic:"أحكام الاستنجاء والطهارة"},
+  {title:"نقد الطالب لزغل المناصب", author:"ابن طولون", dewey:"351.1", reason:"الوظائف العامة والإدارة، بعيد عن النقد الأدبي.", topic:"نقد المناصب الإدارية"},
+  {title:"منهل اللطائف في الكنافة والقطائف", author:"السيوطي", dewey:"641.8", reason:"الحلويات في الطعام، لا أدب لطائف.", topic:"وصفات الكنافة والقطائف تاريخياً"},
+  {title:"طي اللسان عن ذم الطيلسان", author:"السيوطي", dewey:"391.4", reason:"أزياء وملابس تاريخية، غير لغوي.", topic:"دفاع عن الطيلسان كزي علمي"},
+  {title:"أزهار العروش في أخبار الحبوش", author:"السيوطي", dewey:"967", reason:"تاريخ إثيوبيا والحبشة، بعيد عن الزهور.", topic:"تاريخ الحبوش والإثيوبيين"},
+  {title:"بلوغ المآرب في قص الشارب", author:"السيوطي", dewey:"252", reason:"سنن الوضوء والزينة في الفقه.", topic:"أحكام قص الشارب الشرعية"},
+  {title:"المؤتسي بمن حدث حدث ونسي", author:"السيوطي", dewey:"880", reason:"جمعية أدبية للنسيان، غير طبي.", topic:"قصص عن نسيان الرواة"},
+  {title:"الشماريخ في علم التاريخ", author:"السيوطي", dewey:"910", reason:"علوم التاريخ العامة، رغم التلميح الغريب.", topic:"طرق التذكر التاريخي"},
+  {title:"عقلاء المجانين", author:"ابن حبيب النيسابوري", dewey:"616.89", reason:"علم النفس والمجانين، خلاف التلميح الفقهي.", topic:"حكمة المجانين في أقوالهم"},
+  {title:"ابتلاء الأخبار بالنساء الأشرار", author:"ابن القطعة", dewey:"920.72", reason:"تراجم نساء تاريخيات، غير سلبي كما يوحي.", topic:"قصص نساء مشهورات في التاريخ"},
+  {title:"الزنجبيل القاطع في وطء ذات البراقع", author:"السيوطي", dewey:"254", reason:"فقه الزواج والجنس، بعيد عن الطب.", topic:"أحكام معاشرة ذات الثياب الواسعة"}
+];
+
+const cardsContainer = document.getElementById('cards');
+const searchInput = document.getElementById('search');
+const searchBtn = document.getElementById('search-btn');
+const clearBtn = document.getElementById('clear');
+const resultsInfo = document.getElementById('results-info');
+const countSpan = document.getElementById('count');
+const searchForm = document.getElementById('searchForm');
+
+function renderBooks(filteredBooks) {
+  cardsContainer.innerHTML = "";
+ 
+  if (filteredBooks.length === 0) {
+    cardsContainer.innerHTML = '<div class="no-results">🔍 لا توجد نتائج مطابقة للبحث<br><small>جرب كلمات أخرى من العنوان أو المؤلف أو التصنيف أو الموضوع</small></div>';
+    resultsInfo.style.display = 'none';
+    return;
+  }
+ 
+  filteredBooks.forEach(book => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="marc-field">
+        <span class="marc-label">[245 10]</span>
+        <div class="marc-content">${book.title}</div>
+      </div>
+      <div class="marc-field">
+        <span class="marc-label">[100 1#]</span>
+        <div class="marc-content">${book.author}</div>
+      </div>
+      <div class="marc-field">
+        <span class="marc-label">[082 04]</span>
+        <div class="marc-content">${book.dewey}</div>
+      </div>
+      <div class="marc-field">
+        <span class="marc-label">[520 ##]</span>
+        <div class="marc-content">${book.reason}</div>
+      </div>
+      <div class="marc-field">
+        <span class="marc-label">[650 #0]</span>
+        <div class="marc-content">${book.topic}</div>
+      </div>
+    `;
+    cardsContainer.appendChild(card);
+  });
+ 
+  countSpan.textContent = filteredBooks.length;
+  resultsInfo.style.display = 'block';
+}
+
+function searchBooks(query) {
+  if (!query.trim()) return books;
+  const q = query.toLowerCase().trim();
+  return books.filter(book =>
+    book.title.toLowerCase().includes(q) ||
+    book.author.toLowerCase().includes(q) ||
+    book.dewey.includes(q) ||
+    book.reason.toLowerCase().includes(q) ||
+    book.topic.toLowerCase().includes(q)
+  );
+}
+
+function performSearch() {
+  const query = searchInput.value;
+  const filtered = searchBooks(query);
+  renderBooks(filtered);
+}
+
+searchForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  performSearch();
+});
+
+searchBtn.addEventListener('click', (e) => {
+  e.preventDefault();
+  performSearch();
+});
+
+clearBtn.addEventListener('click', () => {
+  searchInput.value = "";
+  renderBooks(books);
+});
+
+renderBooks(books);
+</script>
+</body>
+</html>
